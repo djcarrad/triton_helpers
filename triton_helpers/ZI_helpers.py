@@ -73,8 +73,8 @@ class ZISampleParam(qc.MultiParameter):
         self._sample = sample
         self._meta_attrs.extend(['gain', 'ai0gain', 'ai1gain'])
         if sample.instrument is not None:
-            self._instrument = sample.instrument
-            self._meta_attrs.append('_instrument')
+            self._inst = sample.instrument
+            self._meta_attrs.append('_inst')
 
     def get_raw(self):
         sam=self._sample()
