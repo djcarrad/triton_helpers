@@ -15,8 +15,8 @@ def connect_all(which):
     Usage:
         triton, magnet, qs1, qs2 = connect_all('outer')
     """
-    qs1, qs2 = connect_qswitches(which)
     triton = Triton(name='triton', address='169.254.100.101', port=33576)
     magnet = MercuryiPS_120(name='magnet', address='com7')
+    qs1, qs2 = connect_qswitches(which)
 
     return triton, magnet, qs1, qs2
