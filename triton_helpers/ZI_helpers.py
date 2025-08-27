@@ -1,0 +1,102 @@
+import qcodespp as qc
+import numpy as np
+
+class R4ptParam(qc.MultiParameter):
+    """
+    MultiParameter to return current, voltage and resistance based on two ZI lockin readings.
+    
+    ZI lockins enable making a single reading for X, Y, R, phase, etc.
+    Leverage that to make a single reading for each of two lockins to return all relevant parameters:
+    Currents X Y R P, Voltages X Y R P, and computed resistances X Y R P. 
+    Basically requires only two communication instances instead of 12.
+    If currents are exactly zero, resistance returns NaN.
+
+    Args:
+        li_a_sample (callable): The .sample method of the current-reading lock-in amplifier.
+        li_b_sample (callable): The .sample method of the voltage-reading lock-in amplifier.
+        current_gain (float): Gain on the current preamplifier (default is 1e-6).
+        voltage_gain (float): Gain on the voltage preamplifier (default is 1e-3).
+        include_R (bool): Whether to include amplitude values in the output (default is True).
+        include_phase (bool): Whether to include phase values in the output (default is True).
+        name (str): The name of the parameter (default is 'R4pt').
+
+    Usage:
+        R4pt = R4ptParam(li_a.demod0_sample, li_b.demod0_sample,1e-6,1e-3)
+        station.set_measurement(R4pt)
+    """
+    def __init__(self,li_a_sample,li_b_sample,
+                current_gain=1e-6,voltage_gain=1e-3,
+                include_R=True,include_phase=True,
+                name='R4pt'):
+        
+        names=['CurrentX','CurrentY','CurrentR','CurrentP',
+                    'VoltageX','VoltageY','VoltageR','VoltageP',
+                    'ResistanceX','ResistanceY','ResistanceR']
+        if not include_R:
+            names.remove('CurrentR')
+            names.remove('VoltageR')
+            names.remove('ResistanceR')
+        if not include_phase:
+            names.remove('CurrentP')
+            names.remove('VoltageP')
+        units=[]
+        for name in names:
+            if name.endswith('P'):
+                units.append('rad')
+            elif 'Current' in name:
+                units.append('A')
+            elif 'Voltage' in name:
+                units.append('V')
+            elif 'Resistance' in name:
+                units.append('Ohm')
+
+        super().__init__(
+            name,
+            names=tuple(names),
+            shapes=tuple([() for _ in range(len(names))]),
+            labels=tuple(names),
+            units=tuple(units),
+            docstring=("MultiParameter that reads all necessary values from two "
+                        "ZI lockins to compute a 4 point resistance."),
+        )
+
+        self._current_gain = current_gain
+        self._voltage_gain = voltage_gain
+        self._li_a_sample=li_a_sample
+        self._li_b_sample=li_b_sample
+        self._include_R=include_R
+        self._include_phase=include_phase
+        self._meta_attrs.extend(['_current_gain','_voltage_gain'])
+
+    def get_raw(self):
+        Isam=self._li_a_sample()
+        Vsam=self._li_b_sample()
+        Ix=Isam['x'][0]*self._current_gain
+        Iy=Isam['y'][0]*self._current_gain
+        Ir=np.sqrt(Ix**2+Iy**2)
+        Ip=Isam['phase'][0]
+        Vx=Vsam['x'][0]*self._voltage_gain
+        Vy=Vsam['y'][0]*self._voltage_gain
+        Vr=np.sqrt(Vx**2+Vy**2)
+        Vp=Vsam['phase'][0]
+        if Ix!=0:
+            Rx=Vx/Ix
+        else:
+            Rx=np.nan
+        if Iy!=0:
+            Ry=Vy/Iy
+        else:
+            Ry=np.nan
+        if Ir!=0:
+            Rr=Vr/Ir
+        else:
+            Rr=np.nan
+
+        if self._include_R and self._include_phase:
+            return(Ix,Iy,Ir,Ip,Vx,Vy,Vr,Vp,Rx,Ry,Rr)
+        elif self._include_R:
+            return(Ix,Iy,Ir,Vx,Vy,Vr,Rx,Ry,Rr)
+        elif self._include_phase:
+            return(Ix,Iy,Ip,Vx,Vy,Vp,Rx,Ry)
+        else:
+            return(Ix,Iy,Vx,Vy,Rx,Ry)
