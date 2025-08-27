@@ -11,6 +11,8 @@ class ZISampleParam(qc.MultiParameter):
     the lockin is called; i.e. individually reading X, Y, R, and phase would take four times 
     longer than using this approach.
 
+    Should work for any ZI lockin, using either the qcodes or qcodespp drivers.
+
     Args:
         name (str): The name of the parameter.
         sample (callable): The .sample method of the ZI lock-in amplifier.
@@ -73,8 +75,14 @@ class ZISampleParam(qc.MultiParameter):
         self._sample = sample
         self._meta_attrs.extend(['gain', 'ai0gain', 'ai1gain'])
         if sample.instrument is not None:
-            self._inst = sample.instrument
-            self._meta_attrs.append('_inst')
+            self._inst_name = sample.instrument.name
+            self._inst_class = sample.instrument.__class__
+            self._meta_attrs.extend(['_inst_name', '_inst_class'])
+            try:
+                self._inst_serial = sample.instrument.serial
+                self._meta_attrs.append('_inst_serial')
+            except AttributeError:
+                pass
 
     def get_raw(self):
         sam=self._sample()
@@ -102,6 +110,8 @@ class R4ptParam(qc.MultiParameter):
     Basically requires only two communication instances instead of 14. 
     Phase not returned for resistance since it's not obvious what that means. 
     If currents are exactly zero, resistance returns NaN.
+
+    Should work for any ZI lockin, using either the qcodes or qcodespp drivers.
 
     Args:
         li_a_sample (callable): The .sample method of the current-reading lock-in amplifier.
@@ -159,6 +169,16 @@ class R4ptParam(qc.MultiParameter):
         self._include_R=include_R
         self._include_phase=include_phase
         self._meta_attrs.extend(['_current_gain','_voltage_gain'])
+        for sample in [li_a_sample, li_b_sample]:
+            if sample.instrument is not None:
+                self._inst_name = sample.instrument.name
+                self._inst_class = sample.instrument.__class__
+                self._meta_attrs.extend(['_inst_name', '_inst_class'])
+                try:
+                    self._inst_serial = sample.instrument.serial
+                    self._meta_attrs.append('_inst_serial')
+                except AttributeError:
+                    pass
 
     def get_raw(self):
         Isam=self._li_a_sample()
