@@ -24,7 +24,12 @@ class ZISampleParam(qc.MultiParameter):
         ai1gain (Opt, float): Scaling factor to apply to auxin1 (default is 1).
 
     Usage:
-        Current = ZISampleParam('Current', li_a.demod0_sample, unit='A', components=['r', 'phase'], gain=1e-6)
+        Current = ZISampleParam('Current', 
+                                li_a.demod0_sample, 
+                                unit='A', 
+                                components=['r', 'phase'],
+                                gain=1e-6
+                                )
         station.set_measurement(Current)
     """
     def __init__(self, name, sample, unit='V', ai1unit='V', ai2unit='V', 
@@ -53,21 +58,27 @@ class ZISampleParam(qc.MultiParameter):
             else:
                 units.append(unit)
 
+        instrument=sample.instrument
+        if instrument is not None and name in instrument.parameters:
+            instrument.remove_parameter(name)
+
         super().__init__(
             name,
             names=tuple(names),
             shapes=tuple([() for _ in range(len(names))]),
             labels=tuple(names),
             units=tuple(units),
-            instrument=sample.instrument,
-            docstring=("MultiParameter that returns specified elements from a ZI lockin sample."),
+            instrument=instrument,
+            docstring=("MultiParameter that returns specified components of a ZI lockin sample reading."),
         )
 
-        self._gain = gain
-        self._ai0gain = ai0gain
-        self._ai1gain = ai1gain
-        self._sample=sample
-        self._meta_attrs.extend(['_gain', '_ai0gain', '_ai1gain'])
+        self.gain = gain
+        self.ai0gain = ai0gain
+        self.ai1gain = ai1gain
+        self._sample = sample
+        self._meta_attrs.extend(['gain', 'ai0gain', 'ai1gain'])
+        if self.instrument is not None:
+            self._meta_attrs.append('instrument')
 
     def get_raw(self):
         sam=self._sample()
@@ -76,11 +87,11 @@ class ZISampleParam(qc.MultiParameter):
         for nn in self.names:
             suffix=nn.split('_')[-1]
             if suffix in ['x', 'y', 'r']:
-                to_return.append(sam[suffix][0]*self._gain)
+                to_return.append(sam[suffix][0]*self.gain)
             elif suffix=='auxin0':
-                to_return.append(sam[suffix][0]*self._ai0gain)
+                to_return.append(sam[suffix][0]*self.ai0gain)
             elif suffix=='auxin1':
-                to_return.append(sam[suffix][0]*self._ai1gain)
+                to_return.append(sam[suffix][0]*self.ai1gain)
             else:
                 to_return.append(sam[suffix][0])
         return tuple(to_return)
