@@ -169,14 +169,14 @@ class R4ptParam(qc.MultiParameter):
         self._include_R=include_R
         self._include_phase=include_phase
         self._meta_attrs.extend(['_current_gain','_voltage_gain'])
-        for sample in [li_a_sample, li_b_sample]:
+        for i,sample in zip(['a','b'],[li_a_sample, li_b_sample]):
             if sample.instrument is not None:
-                self._inst_name = sample.instrument.name
-                self._inst_class = sample.instrument.__class__
-                self._meta_attrs.extend(['_inst_name', '_inst_class'])
+                setattr(self, f'_inst_{i}_name', sample.instrument.name)
+                setattr(self, f'_inst_{i}_class', sample.instrument.__class__)
+                self._meta_attrs.extend([f'_inst_{i}_name', f'_inst_{i}_class'])
                 try:
-                    self._inst_serial = sample.instrument.serial
-                    self._meta_attrs.append('_inst_serial')
+                    setattr(self, f'_inst_{i}_serial', sample.instrument.serial)
+                    self._meta_attrs.append(f'_inst_{i}_serial')
                 except AttributeError:
                     pass
 
