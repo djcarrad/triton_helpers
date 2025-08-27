@@ -1,0 +1,34 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+
+build-backend = 'flit_core.buildapi'
+
+[project]
+name = "triton_helpers"
+version = '0.0.1'
+maintainers = [{name = "Damon Carrad", email = "damonc@dtu.dk"}]
+description = "Helper functions specific to the Thomas Sand lab cryostat at DTU Energy"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering",
+]
+license = {text = "MIT"}
+requires-python = ">=3.10"
+dependencies = [ 
+    'qcodespp>=0.1.10'
+]
+
+[project.readme]
+file = "README.rst"
+content-type = "text/x-rst"
+
+[project.urls]
+Homepage = "https://github.com/djcarrad/triton_helpers"
+
