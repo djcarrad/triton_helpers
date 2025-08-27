@@ -1,6 +1,79 @@
 import qcodespp as qc
 import numpy as np
 
+class ZISampleParam(qc.MultiParameter):
+    """
+    MultiParameter containing various parts of a ZI lockin sample reading.
+    
+    ZI lockins enable making a single reading for X, Y, R, phase, etc. 
+    Leverage that to make a single reading and return as many pieces as the user wishes.
+    The advantage is that the communication time scales linearly with the number of times 
+    the lockin is called; i.e. individually reading X, Y, R, and phase would take four times 
+    longer than using this approach.
+
+    Args:
+        name (str): The name of the parameter.
+        sample (callable): The .sample method of the ZI lock-in amplifier.
+        unit (Opt, str): The unit for the demodulator input. Default is 'V'.
+        ai1unit (Opt, str): The unit for auxin0 readings (default is 'V').
+        ai2unit (Opt, str): The unit for auxin1 readings (default is 'V').
+        components (Opt, list of strings): The components to include in the reading. 
+            Accepts any of the values returned by the sample (default is 'x', 'y', 'r', 'phase').
+        gain (Opt, float): Scaling factor to apply to X, Y, R (default is 1).
+
+    Usage:
+        Current = ZISampleParam('Current', li_a.demod0_sample, unit='A', components=['r', 'phase'], gain=1e-6)
+        station.set_measurement(Current)
+    """
+    def __init__(self, name, sample, unit='V', ai1unit='V', ai2unit='V', components=['x', 'y', 'r', 'phase'], gain=1.0):
+        for comp in components:
+            if comp not in ['x', 'y', 'r', 'phase', 'timestamp', 'frequency', 
+                            'auxin0', 'auxin1', 'dio', 'trigger']:
+                raise ValueError("components must be a list containing any of "
+                                "'x', 'y', 'r', 'phase', 'timestamp', 'frequency', "
+                                "'auxin0', 'auxin1', 'dio', 'trigger'")
+        names=[f'{name}_{comp}' for comp in components]
+        units=[]
+        for nn in names:
+            if nn.endswith('phase'):
+                units.append('rad')
+            elif nn.endswith('timestamp'):
+                units.append('s')
+            elif nn.endswith('frequency'):
+                units.append('Hz')
+            elif nn.endswith('auxin0'):
+                units.append(ai1unit)
+            elif nn.endswith('auxin1'):
+                units.append(ai2unit)
+            elif nn.endswith('dio') or nn.endswith('trigger'):
+                units.append('')
+            else:
+                units.append(unit)
+
+        super().__init__(
+            name,
+            names=tuple(names),
+            shapes=tuple([() for _ in range(len(names))]),
+            labels=tuple(names),
+            units=tuple(units),
+            instrument=sample.instrument,
+            docstring=("MultiParameter that returns specified elements from a ZI lockin sample."),
+        )
+
+        self._gain = gain
+        self._sample=sample
+        self._meta_attrs.extend(['_gain'])
+
+    def get_raw(self):
+        sam=self._sample()
+        sam['r']=np.sqrt(sam['x']**2 + sam['y']**2)
+        to_return=[]
+        for nn in self.names:
+            suffix=nn.split('_')[-1]
+            to_return.append(sam[suffix])
+        return tuple(to_return)
+
+
 class R4ptParam(qc.MultiParameter):
     """
     MultiParameter to return current, voltage and resistance based on two ZI lockin readings.
