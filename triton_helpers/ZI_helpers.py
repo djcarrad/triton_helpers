@@ -58,17 +58,12 @@ class ZISampleParam(qc.MultiParameter):
             else:
                 units.append(unit)
 
-        instrument=sample.instrument
-        if instrument is not None and name in instrument.parameters:
-            instrument.remove_parameter(name)
-
         super().__init__(
             name,
             names=tuple(names),
             shapes=tuple([() for _ in range(len(names))]),
             labels=tuple(names),
             units=tuple(units),
-            instrument=instrument,
             docstring=("MultiParameter that returns specified components of a ZI lockin sample reading."),
         )
 
@@ -77,8 +72,9 @@ class ZISampleParam(qc.MultiParameter):
         self.ai1gain = ai1gain
         self._sample = sample
         self._meta_attrs.extend(['gain', 'ai0gain', 'ai1gain'])
-        if self.instrument is not None:
-            self._meta_attrs.append('instrument')
+        if sample.instrument is not None:
+            self._instrument = sample.instrument
+            self._meta_attrs.append('_instrument')
 
     def get_raw(self):
         sam=self._sample()
@@ -95,7 +91,6 @@ class ZISampleParam(qc.MultiParameter):
             else:
                 to_return.append(sam[suffix][0])
         return tuple(to_return)
-
 
 class R4ptParam(qc.MultiParameter):
     """
