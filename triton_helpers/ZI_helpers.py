@@ -20,12 +20,15 @@ class ZISampleParam(qc.MultiParameter):
         components (Opt, list of strings): The components to include in the reading. 
             Accepts any of the values returned by the sample (default is 'x', 'y', 'r', 'phase').
         gain (Opt, float): Scaling factor to apply to X, Y, R (default is 1).
+        ai0gain (Opt, float): Scaling factor to apply to auxin0 (default is 1).
+        ai1gain (Opt, float): Scaling factor to apply to auxin1 (default is 1).
 
     Usage:
         Current = ZISampleParam('Current', li_a.demod0_sample, unit='A', components=['r', 'phase'], gain=1e-6)
         station.set_measurement(Current)
     """
-    def __init__(self, name, sample, unit='V', ai1unit='V', ai2unit='V', components=['x', 'y', 'r', 'phase'], gain=1.0):
+    def __init__(self, name, sample, unit='V', ai1unit='V', ai2unit='V', 
+                 components=['x', 'y', 'r', 'phase'], gain=1.0, ai0gain=1.0, ai1gain=1.0):
         for comp in components:
             if comp not in ['x', 'y', 'r', 'phase', 'timestamp', 'frequency', 
                             'auxin0', 'auxin1', 'dio', 'trigger']:
@@ -61,8 +64,10 @@ class ZISampleParam(qc.MultiParameter):
         )
 
         self._gain = gain
+        self._ai0gain = ai0gain
+        self._ai1gain = ai1gain
         self._sample=sample
-        self._meta_attrs.extend(['_gain'])
+        self._meta_attrs.extend(['_gain', '_ai0gain', '_ai1gain'])
 
     def get_raw(self):
         sam=self._sample()
@@ -70,7 +75,14 @@ class ZISampleParam(qc.MultiParameter):
         to_return=[]
         for nn in self.names:
             suffix=nn.split('_')[-1]
-            to_return.append(sam[suffix])
+            if suffix in ['x', 'y', 'r']:
+                to_return.append(sam[suffix][0]*self._gain)
+            elif suffix=='auxin0':
+                to_return.append(sam[suffix][0]*self._ai0gain)
+            elif suffix=='auxin1':
+                to_return.append(sam[suffix][0]*self._ai1gain)
+            else:
+                to_return.append(sam[suffix][0])
         return tuple(to_return)
 
 
