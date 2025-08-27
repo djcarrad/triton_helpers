@@ -5,10 +5,11 @@ class R4ptParam(qc.MultiParameter):
     """
     MultiParameter to return current, voltage and resistance based on two ZI lockin readings.
     
-    ZI lockins enable making a single reading for X, Y, R, phase, etc.
-    Leverage that to make a single reading for each of two lockins to return all relevant parameters:
-    Currents X Y R P, Voltages X Y R P, and computed resistances X Y R P. 
-    Basically requires only two communication instances instead of 12.
+    ZI lockins enable making a single reading for X, Y, R, phase. 
+    Leverage that to make a single reading for each of two lockins to return all relevant parameters: 
+    Currents X Y R P, Voltages X Y R P, and computed resistances X Y R. 
+    Basically requires only two communication instances instead of 14. 
+    Phase not returned for resistance since it's not obvious what that means. 
     If currents are exactly zero, resistance returns NaN.
 
     Args:
