@@ -41,14 +41,14 @@ class R4ptParam(qc.MultiParameter):
             names.remove('CurrentP')
             names.remove('VoltageP')
         units=[]
-        for name in names:
-            if name.endswith('P'):
+        for nn in names:
+            if nn.endswith('P'):
                 units.append('rad')
-            elif 'Current' in name:
+            elif 'Current' in nn:
                 units.append('A')
-            elif 'Voltage' in name:
+            elif 'Voltage' in nn:
                 units.append('V')
-            elif 'Resistance' in name:
+            elif 'Resistance' in nn:
                 units.append('Ohm')
 
         super().__init__(
