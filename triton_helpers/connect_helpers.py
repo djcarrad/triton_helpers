@@ -2,7 +2,7 @@ from qcodespp.instrument_drivers.oxford.triton import Triton
 from qcodespp.instrument_drivers.oxford.mercuryiPS_serial import MercuryiPS_120
 from triton_helpers.qswitch_helpers import connect_qswitches
 
-def connect_all(which):
+def connect_fixed_instruments(which):
     """
     Connect to all stationary objects.
 
