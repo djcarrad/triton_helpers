@@ -13,10 +13,10 @@ def connect_fixed_instruments(which):
         tuple: A tuple containing the connected instruments.
 
     Usage:
-        triton, magnet, qs1, qs2 = connect_all('outer')
+        triton, magnet, qsws = connect_all('outer')
     """
     triton = Triton(name='triton', address='169.254.100.101', port=33576)
     magnet = MercuryiPS_120(name='magnet', address='com7')
-    qs1, qs2 = connect_qswitches(which)
+    qsws = connect_qswitches(which)
 
-    return triton, magnet, qs1, qs2
+    return triton, magnet, qsws
